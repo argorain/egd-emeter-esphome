@@ -300,39 +300,61 @@ void DlmsPushMeter::try_parse_and_dispatch_() {
     return;
   }
 
-  DecodedValue body;
-  if (!this->decode_value_(buf, pos, body, 0)) {
-    ESP_LOGW(TAG, "Failed to decode notification body (%zu bytes captured)", buf.size());
-    return;
-  }
-  // body = structure(2) = { class enum, array of items }
-  if (body.kind != DecodedValue::Kind::STRUCT || body.children.size() != 2 ||
-      body.children[1].kind != DecodedValue::Kind::STRUCT) {
+  // notification-body = structure(2) = { class-id enum, array of items }.
+  // Each array item is structure(2) = { attribute-descriptor, value }, but
+  // unlike every other value in this APDU, the descriptor is NOT a generic
+  // tagged "Data" value: it's a fixed-width raw SEQUENCE (Cosem-Attribute-
+  // Descriptor: 2-byte class-id + 6-byte OBIS + 1-byte attribute-id, 9 bytes,
+  // no type tags at all). Confirmed against the datasheet's own worked
+  // example, byte-for-byte, against two different items. A fully generic
+  // recursive decoder can't know this without the context that it's parsing
+  // this specific field, hence the manual walk below instead of decode_value_.
+  if (pos + 2 > buf.size() || buf[pos] != 0x02 || buf[pos + 1] != 0x02) {
     ESP_LOGW(TAG, "Unexpected notification body shape");
     return;
   }
+  pos += 2;
 
-  const auto &items = body.children[1].children;
+  DecodedValue class_enum;  // unused, part of the fixed APDU shape
+  if (!this->decode_value_(buf, pos, class_enum, 0)) {
+    ESP_LOGW(TAG, "Failed to decode notification body class");
+    return;
+  }
+  (void) class_enum;
+
+  if (pos + 2 > buf.size() || buf[pos] != 0x01) {
+    ESP_LOGW(TAG, "Expected item array in notification body");
+    return;
+  }
+  pos++;
+  uint8_t item_count = buf[pos++];
+
   std::vector<ObisEntry> entries;
-  entries.reserve(items.size());
-  for (const auto &item : items) {
-    // item = structure(2) = { descriptor structure(3): {class_id, obis, attribute}, value }
-    if (item.kind != DecodedValue::Kind::STRUCT || item.children.size() != 2)
-      continue;
-    const auto &descriptor = item.children[0];
-    const auto &value = item.children[1];
-    if (descriptor.kind != DecodedValue::Kind::STRUCT || descriptor.children.size() != 3)
-      continue;
-    const auto &obis_raw = descriptor.children[1].raw;
-    if (obis_raw.size() != 6)
-      continue;
+  entries.reserve(item_count);
+  for (uint8_t idx = 0; idx < item_count; idx++) {
+    if (pos + 2 + 9 > buf.size()) {
+      ESP_LOGW(TAG, "Item %u truncated", idx);
+      return;
+    }
+    if (buf[pos] != 0x02 || buf[pos + 1] != 0x02) {
+      ESP_LOGW(TAG, "Item %u is not a 2-element structure (tag 0x%02X)", idx, buf[pos]);
+      return;
+    }
+    pos += 2;
+    pos += 2;  // class-id, unused (we match by OBIS only)
     ObisEntry entry;
-    std::copy(obis_raw.begin(), obis_raw.end(), entry.obis.begin());
-    entry.value = value;
+    std::copy(buf.begin() + pos, buf.begin() + pos + 6, entry.obis.begin());
+    pos += 6;
+    pos += 1;  // attribute-id, unused
+
+    if (!this->decode_value_(buf, pos, entry.value, 0)) {
+      ESP_LOGW(TAG, "Failed to decode value for item %u (OBIS %s)", idx, format_obis_(entry.obis).c_str());
+      return;
+    }
     entries.push_back(std::move(entry));
   }
 
-  ESP_LOGD(TAG, "Decoded %zu OBIS item(s) from %zu byte frame", entries.size(), buf.size());
+  ESP_LOGD(TAG, "Decoded %u OBIS item(s) from %zu byte frame", item_count, buf.size());
   this->dispatch_(entries);
 }
 
