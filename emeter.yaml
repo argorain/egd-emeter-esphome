@@ -1,0 +1,6 @@
+substitutions:
+  name: emeter
+  friendly_name: "Elektroměr"
+
+packages:
+  emeter: github://argorain/egd-emeter-esphome/packages/emeter.yaml@master
