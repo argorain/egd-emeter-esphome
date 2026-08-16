@@ -2,5 +2,13 @@ substitutions:
   name: emeter
   friendly_name: "Elektroměr"
 
+  # --- Fill these in before uploading to Home Assistant, then don't commit
+  # your filled-in copy anywhere public. ---
+  wifi_ssid: "CHANGE_ME_WIFI_SSID"
+  wifi_password: "CHANGE_ME_WIFI_PASSWORD"
+  # Generate with: python3 -c "import base64, os; print(base64.b64encode(os.urandom(32)).decode())"
+  api_encryption_key: "CHANGE_ME_32_BYTE_BASE64_KEY"
+  ota_password: "CHANGE_ME_OTA_PASSWORD"
+
 packages:
   emeter: github://argorain/egd-emeter-esphome/packages/emeter.yaml@master

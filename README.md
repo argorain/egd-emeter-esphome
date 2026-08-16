@@ -57,23 +57,25 @@ board only ever listens.
 
 1. Open the **ESPHome** add-on / dashboard in Home Assistant.
 2. **New device → Continue → Skip** the wizard (or "I already have a YAML file"), name it `emeter`.
-3. Replace the generated file's contents with just this repo's [`emeter.yaml`](emeter.yaml):
+3. Replace the generated file's contents with this repo's [`emeter.yaml`](emeter.yaml), **filling in the
+   four `CHANGE_ME_...` placeholders** in the `substitutions:` block:
    ```yaml
    substitutions:
      name: emeter
      friendly_name: "Elektroměr"
 
+     wifi_ssid: "your WiFi SSID"
+     wifi_password: "your WiFi password"
+     # Generate with: python3 -c "import base64, os; print(base64.b64encode(os.urandom(32)).decode())"
+     api_encryption_key: "a 32-byte base64 key"
+     ota_password: "any strong password"
+
    packages:
      emeter: github://argorain/egd-emeter-esphome/packages/emeter.yaml@master
    ```
-4. The add-on's own `secrets.yaml` (Settings → the file editor, or the add-on's secrets management) needs:
-   - `wifi_ssid` / `wifi_password` — your WiFi network
-   - `api_encryption_key` — generate with:
-     ```bash
-     python3 -c "import base64, os; print(base64.b64encode(os.urandom(32)).decode())"
-     ```
-   - `ota_password` — any strong password
-5. Click **Install** → **Plug into this computer** (first flash only, needs USB-C) → pick the serial port.
+   That's the whole file — no `secrets.yaml`, no separate secrets management. Just don't paste your filled-in
+   copy anywhere public (this repo's own `emeter.yaml` keeps the placeholders).
+4. Click **Install** → **Plug into this computer** (first flash only, needs USB-C) → pick the serial port.
    ESPHome pulls `packages/emeter.yaml` and `components/dlms_push_meter/` from GitHub automatically at
    build time — nothing else to copy.
 
@@ -85,7 +87,7 @@ sooner). Re-flashing after the first time is OTA, no more USB needed.
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate && pip install esphome
-cp secrets.yaml.example secrets.yaml   # fill in wifi/api/ota values as above
+# fill in the CHANGE_ME_... placeholders in emeter.yaml's substitutions block first
 esphome run emeter.yaml
 ```
 
@@ -99,7 +101,7 @@ If you flashed via the ESPHome add-on, the device is added automatically once it
 
 Otherwise: if you run the Home Assistant ESPHome integration with mDNS discovery, the device (`emeter.local`)
 should be auto-discovered — go to **Settings → Devices & Services** and look for a new ESPHome device, then
-enter the `api_encryption_key` from your `secrets.yaml` when prompted.
+enter the `api_encryption_key` you set in `emeter.yaml` when prompted.
 
 Or add it manually: **Settings → Devices & Services → Add Integration → ESPHome**, host `emeter.local`
 (or its IP), and paste the encryption key.
