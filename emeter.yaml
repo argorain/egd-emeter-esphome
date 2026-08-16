@@ -11,4 +11,11 @@ substitutions:
   ota_password: "CHANGE_ME_OTA_PASSWORD"
 
 packages:
-  emeter: github://argorain/egd-emeter-esphome/packages/emeter.yaml@master
+  emeter:
+    url: https://github.com/argorain/egd-emeter-esphome
+    file: packages/emeter.yaml
+    ref: master
+    # Always re-fetch instead of trusting a day-old cache — this repo is a
+    # single personal device config, so a fresh git check on every build
+    # costs nothing and avoids stale-cache surprises after a push.
+    refresh: 0s

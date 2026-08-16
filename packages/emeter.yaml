@@ -18,7 +18,7 @@ psram:
 external_components:
   - source: github://argorain/egd-emeter-esphome@master
     components: [dlms_push_meter]
-    refresh: 1d
+    refresh: 0s
 
 # --- Base network / diagnostics ---------------------------------------------
 
