@@ -355,6 +355,9 @@ void DlmsPushMeter::try_parse_and_dispatch_() {
   }
 
   ESP_LOGD(TAG, "Decoded %u OBIS item(s) from %zu byte frame", item_count, buf.size());
+  for (const auto &entry : entries) {
+    ESP_LOGV(TAG, "  %s = %s", format_obis_(entry.obis).c_str(), describe_value_(entry.value).c_str());
+  }
   this->dispatch_(entries);
 }
 
@@ -383,7 +386,13 @@ void DlmsPushMeter::dispatch_(const std::vector<ObisEntry> &entries) {
       continue;
     if (v->kind != DecodedValue::Kind::STRING)
       continue;
-    listener.sensor->publish_state(v->sval);
+    if (listener.format_as_obis && v->raw.size() == 6) {
+      Obis obis;
+      std::copy(v->raw.begin(), v->raw.end(), obis.begin());
+      listener.sensor->publish_state(format_obis_(obis));
+    } else {
+      listener.sensor->publish_state(v->sval);
+    }
   }
 #endif
 #ifdef USE_BINARY_SENSOR
@@ -502,8 +511,8 @@ void DlmsPushMeter::register_sensor(const Obis &obis, sensor::Sensor *s, float s
 }
 #endif
 #ifdef USE_TEXT_SENSOR
-void DlmsPushMeter::register_text_sensor(const Obis &obis, text_sensor::TextSensor *s) {
-  this->text_sensor_listeners_.push_back({obis, s});
+void DlmsPushMeter::register_text_sensor(const Obis &obis, text_sensor::TextSensor *s, bool format_as_obis) {
+  this->text_sensor_listeners_.push_back({obis, s, format_as_obis});
 }
 #endif
 #ifdef USE_BINARY_SENSOR

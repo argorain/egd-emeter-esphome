@@ -55,7 +55,10 @@ class DlmsPushMeter : public Component, public uart::UARTDevice {
   void set_unknown_obis_count_sensor(sensor::Sensor *s) { this->unknown_obis_count_sensor_ = s; }
 #endif
 #ifdef USE_TEXT_SENSOR
-  void register_text_sensor(const Obis &obis, text_sensor::TextSensor *s);
+  // format_as_obis: some fields (e.g. a push-setup object's own logical-name
+  // attribute) carry a 6-byte OBIS code as their *value*, not free text —
+  // render those as "A-B:C.D.E.F" instead of raw/garbled octet-string bytes.
+  void register_text_sensor(const Obis &obis, text_sensor::TextSensor *s, bool format_as_obis = false);
   // Diagnostic: human-readable "OBIS=value" list of the unknown codes above.
   void set_unknown_obis_list_text_sensor(text_sensor::TextSensor *s) { this->unknown_obis_list_text_sensor_ = s; }
 #endif
@@ -91,6 +94,7 @@ class DlmsPushMeter : public Component, public uart::UARTDevice {
   struct TextSensorListener {
     Obis obis;
     text_sensor::TextSensor *sensor;
+    bool format_as_obis;
   };
   std::vector<TextSensorListener> text_sensor_listeners_;
   text_sensor::TextSensor *unknown_obis_list_text_sensor_{nullptr};

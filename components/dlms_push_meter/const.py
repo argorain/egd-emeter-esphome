@@ -23,7 +23,16 @@ TEXT_SENSOR_OBIS = {
     "device_name": "0-0:42.0.0.255",
     "active_tariff": "0-0:96.14.0.255",
     "consumer_message": "0-0:96.13.0.255",
+    # Push-setup object's own logical-name attribute — its value is that same
+    # OBIS code echoed back, confirming which push configuration sent this
+    # telegram. Meta-info, not a measurement, but worth surfacing so it
+    # doesn't perpetually show up as an "unknown OBIS".
+    "push_setup_reference": "0-2:25.9.0.255",
 }
+
+# Keys whose raw octet-string value is itself a 6-byte OBIS code and should
+# be rendered as "A-B:C.D.E.F" rather than treated as free text.
+TEXT_SENSOR_FORMAT_AS_OBIS = {"push_setup_reference"}
 
 BINARY_SENSOR_OBIS = {
     "disconnect_status": "0-0:96.3.10.255",

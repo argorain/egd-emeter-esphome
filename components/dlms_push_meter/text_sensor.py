@@ -4,11 +4,11 @@ import esphome.config_validation as cv
 from esphome.const import ENTITY_CATEGORY_DIAGNOSTIC
 
 from . import CONF_DLMS_PUSH_METER_ID, DlmsPushMeter, obis_to_cpp
-from .const import TEXT_SENSOR_OBIS
+from .const import TEXT_SENSOR_FORMAT_AS_OBIS, TEXT_SENSOR_OBIS
 
 CONF_UNKNOWN_OBIS_LIST = "unknown_obis_list"
 
-_DIAGNOSTIC_KEYS = {"serial_number", "device_name", "consumer_message"}
+_DIAGNOSTIC_KEYS = {"serial_number", "device_name", "consumer_message", "push_setup_reference"}
 
 def _text_sensor_schema(key):
     kwargs = {}
@@ -37,7 +37,8 @@ async def to_code(config):
         if conf is None:
             continue
         sens = await text_sensor.new_text_sensor(conf)
-        cg.add(hub.register_text_sensor(obis_to_cpp(obis), sens))
+        format_as_obis = key in TEXT_SENSOR_FORMAT_AS_OBIS
+        cg.add(hub.register_text_sensor(obis_to_cpp(obis), sens, format_as_obis))
 
     if (conf := config.get(CONF_UNKNOWN_OBIS_LIST)) is not None:
         sens = await text_sensor.new_text_sensor(conf)

@@ -134,6 +134,8 @@ text_sensor:
       name: "Active Tariff"
     consumer_message:
       name: "Consumer Message"
+    push_setup_reference:
+      name: "Push Setup Reference"
     unknown_obis_list:
       name: "Unknown OBIS Codes"
 

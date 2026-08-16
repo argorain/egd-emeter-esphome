@@ -147,6 +147,11 @@ unaffected.
   to `parity: EVEN` in that file's `uart:` block, push, and rebuild.
 - **Values look present but wrong**: the datasheet's own sample telegram already reports power/energy in
   base units (W / Wh) with no scaling exponent, and the firmware trusts that as-is. If your meter reports
-  differently, note the OBIS code and raw value from the logs (`esphome logs`, debug level) and it can be
-  re-scaled per field in `components/dlms_push_meter/sensor.py`.
+  differently, note the OBIS code and raw value from the logs and it can be re-scaled per field in
+  `components/dlms_push_meter/sensor.py`.
+- **Checking exactly what the meter sent, per field**: set the component's log level to `VERBOSE` (either
+  globally with `logger: level: VERBOSE`, or scoped with `logger: logs: {dlms_push_meter: VERBOSE}` to avoid
+  the noise of verbose logging everywhere else) and rebuild. Every decoded telegram then logs one line per
+  OBIS code with its raw parsed value, e.g. `1-0:2.8.0.255 = 38543`, so you can confirm a suspicious reading
+  is really what the meter transmitted rather than a firmware decoding issue.
 
